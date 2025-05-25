@@ -1,12 +1,10 @@
-
-# Additional Packages-----------------------------------------------------------
-
-#' @importFrom rgbif occ_search
+# Additional Packages -----------------------------------------------------------
 #' @importFrom dplyr bind_rows filter select
-
+#' @importFrom rgbif occ_search
+#' @importFrom leaflet leaflet addTiles addMarkers
 
 # ------------------------------------------------------------------------------
-# FUNCTION  1
+# FUNCTION 1: get_gbif_occurrences_by_month
 # ------------------------------------------------------------------------------
 
 #' @title Get GBIF Occurrences for a Plant Filtered by Month
@@ -69,20 +67,10 @@ get_gbif_occurrences_by_month <- function(scientific_name, months, limit = 1000)
   dplyr::select(df_filtered, scientificName, month, decimalLatitude, decimalLongitude)
 }
 
-# Usage-------------------------------------------------------------------------
-
-wild_garlic_locations <- get_gbif_occurrences_by_month("Allium ursinum", c("March", "April"))
-leaflet::leaflet(wild_garlic_locations) %>%
-  leaflet::addTiles() %>%
-  leaflet::addMarkers(~decimalLongitude, ~decimalLatitude)
-
-install.packages("leaflet")
-library(leaflet)
-
-#-------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-# FUNCTION 2
+# FUNCTION 2: add_foraging_location
 # ------------------------------------------------------------------------------
+
 #' @title Add a New Foraging Location
 #'
 #' @description
@@ -124,10 +112,9 @@ add_foraging_location <- function(data, plant, lat, lon, month, notes = "") {
   dplyr::bind_rows(data, new_entry)
 }
 
-# Usage-------------------------------------------------------------------------
+# remove.packages("urbanforaging")
+#
+# devtools::document()  # will now recreate NAMESPACE and man/ files
+# devtools::install()
 
-add_foraging_location(df, "Wild Garlic", 52.37, 4.89, "March", "Under the bridge")
 
-# ------------------------------------------------------------------------------
-
-devtools::document()

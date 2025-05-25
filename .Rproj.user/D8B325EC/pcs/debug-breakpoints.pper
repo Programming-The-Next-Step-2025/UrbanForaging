@@ -1,21 +1,5 @@
 {
     "debugBreakpointsState": {
-        "breakpoints": [
-            {
-                "id": 0,
-                "path": "~/Documents/GitHub/berkan_project/R/week-2_functions.R",
-                "line_number": 14,
-                "function_steps": "",
-                "function_name": "filter_by_month",
-                "state": 2,
-                "editor_state": 2,
-                "editor_line_number": 14,
-                "is_pending_debug_completion": false,
-                "needs_updated_steps": false,
-                "type": 0,
-                "is_package_breakpoint": true,
-                "package_name": "urbanforaging"
-            }
-        ]
+        "breakpoints": []
     }
 }
