@@ -8,5 +8,5 @@ run_uf_app()
 }
 \description{
 Works both from an installed package and from the development
-source tree (`inst/app`).
+source tree.
 }

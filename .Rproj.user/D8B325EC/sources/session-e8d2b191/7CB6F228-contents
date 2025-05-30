@@ -25,3 +25,4 @@ source_file("shiny_server.R")
 
 # Launch the app
 shinyApp(ui = ui, server = server)
+run_uf_app()
