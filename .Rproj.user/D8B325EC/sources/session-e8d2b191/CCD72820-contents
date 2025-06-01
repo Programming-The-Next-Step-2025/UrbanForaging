@@ -272,3 +272,4 @@ server <- function(input, output, session) {
 
 # ── 7 • launch ─────────────────────────────────────────────────────────────
 shinyApp(ui, server)
+
