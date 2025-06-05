@@ -1,0 +1,27 @@
+---
+title: "Overview of urbanforaging"
+author: "Berkan Akin"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Overview of urbanforaging}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+
+1. Navigate to **Community Spots** tab.
+
+```{r, echo=FALSE, out.width="600px"}
+knitr::include_graphics(system.file("www", "community_tab.png", package = "urbanforaging"))
+
+
+

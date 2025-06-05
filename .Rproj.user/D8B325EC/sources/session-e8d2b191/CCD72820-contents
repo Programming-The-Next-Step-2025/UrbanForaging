@@ -1,0 +1,275 @@
+# App.R Version without tab 3 but with working dropdown menu
+
+# ---------------------------------------------------------------------------
+#  Urban Foraging  •  Shiny App
+# ---------------------------------------------------------------------------
+
+# ── 0 • packages ────────────────────────────────────────────────────────────
+library(shiny)
+library(shinyWidgets)
+library(leaflet)
+library(dplyr)
+library(readr)
+library(rprojroot)
+library(htmltools)      # htmlEscape()
+# (If get_gbif_occurrences_by_month lives in another package, be sure it’s loaded)
+
+# ── 1 • static resource paths ──────────────────────────────────────────────
+## 1a • generic www/
+www_path <- system.file("www", package = "urbanforaging")
+if (www_path == "") www_path <- file.path("inst", "www")
+dir.create(www_path, recursive = TRUE, showWarnings = FALSE)
+addResourcePath("www", www_path)
+
+## 1b • plantpics/images/
+plantpics_dir <- system.file("plantpics/images", package = "urbanforaging")
+if (plantpics_dir == "") {
+  pkg_root <- rprojroot::find_root("DESCRIPTION")
+  plantpics_dir <- file.path(pkg_root, "inst", "plantpics", "images")
+}
+addResourcePath("plantpics", plantpics_dir)
+
+# ── 2 • lookup table ───────────────────────────────────────────────────────
+lookup_csv <- system.file("extdata/edible_plants.csv", package = "urbanforaging")
+if (lookup_csv == "") lookup_csv <- file.path("inst", "extdata", "edible_plants.csv")
+
+plants_df <- read_csv(lookup_csv, show_col_types = FALSE) |>
+  mutate(
+    img = ifelse(
+      grepl("^https?://", img),
+      img,
+      gsub(" ", "%20", file.path("/plantpics", basename(img)), fixed = TRUE)
+    )
+  )
+
+# ── 3 • community-spot CSV (simplified) ────────────────────────────────────
+spots_csv <- system.file("app/foraging_spots.csv", package = "urbanforaging")
+if (spots_csv == "") {
+  pkg_root <- rprojroot::find_root("DESCRIPTION")
+  spots_csv <- file.path(pkg_root, "inst", "app", "foraging_spots.csv")
+}
+if (!file.exists(spots_csv)) {
+  dir.create(dirname(spots_csv), recursive = TRUE, showWarnings = FALSE)
+  write_csv(tibble(
+    plant = character(), lat = numeric(), lon = numeric(),
+    month = character(), notes = character(), photo = character()
+  ), spots_csv)
+}
+spots_rv <- reactiveVal(read_csv(spots_csv, show_col_types = FALSE))
+save_spots <- function(df) { write_csv(df, spots_csv); spots_rv(df) }
+
+# ── 4 • javascript helper (get map centre) ─────────────────────────────────
+js <- "
+Shiny.addCustomMessageHandler('getCentre', function(msg){
+  var map = $('#map').data('leaflet-map');
+  if (map){
+    var c = map.getCenter();
+    Shiny.setInputValue('map_center', {lat: c.lat, lng: c.lng});
+  }
+});
+"
+
+# ── 5 • user interface ─────────────────────────────────────────────────────
+ui <- fluidPage(
+  tags$head(tags$script(HTML(js))),
+  titlePanel('Urban Foraging Map – Amsterdam'),
+
+  tabsetPanel(
+
+    ## TAB 1 — Community spots ------------------------------------------------
+    tabPanel(
+      'Community spots',
+      sidebarLayout(
+        sidebarPanel(
+          selectizeInput(
+            "plant_pick", "Plant",
+            choices = NULL,
+            options = list(
+              valueField  = "label",
+              labelField  = "label",
+              searchField = c("label", "sci"),
+              options = purrr::pmap(
+                plants_df,
+                function(label, sci, img, ...) {
+                  list(value = label, label = label, sci = sci, img = img)
+                }
+              ),
+              render = I("
+                {
+                  option: function(item, escape){
+                    return '<div style=\"display:flex;align-items:center\">' +
+                           '<img src=\"' + item.img + '\" height=\"30\" ' +
+                           'style=\"margin-right:6px\" ' +
+                           'onerror=\"this.onerror=null;this.src=\\'/www/noimage.png\\';\">' +
+                           '<div><b>' + escape(item.label) +
+                           '</b> – <i>' + escape(item.sci) + '</i></div></div>';
+                  }
+                }
+              ")
+            )
+          ),
+          selectInput('month_new', 'Season / month',
+                      choices = month.name, selected = 'April'),
+          textAreaInput('notes', 'Notes (optional)', rows = 3),
+          fileInput('photo', 'Photo (optional)',
+                    accept = c('image/jpeg', 'image/png')),
+          pickerInput('filter_months', 'Show months',
+                      choices = month.name, selected = month.name,
+                      multiple = TRUE),
+          actionButton('add', 'Add map centre →', class = 'btn-success'),
+          helpText('Pan/zoom to the location, then press “Add”.')
+        ),
+        mainPanel(leafletOutput('map', height = 600))
+      )
+    ),
+
+    ## TAB 2 — GBIF lookup  ----------------------------------------
+    tabPanel(
+      'GBIF lookup',
+      sidebarLayout(
+        sidebarPanel(
+          selectizeInput(
+            'gbif_species', 'Plant',
+            choices = NULL,
+            options = list(
+              valueField  = 'sci',          # value returned is scientific name
+              labelField  = 'label',        # text shown is common name
+              searchField = c('label', 'sci'),
+              options = purrr::pmap(
+                plants_df,
+                function(label, sci, img, ...) {
+                  list(value = sci, label = label, sci = sci, img = img)
+                }
+              ),
+              placeholder = 'Start typing a plant…',
+              render = I("{
+                option: function(item, escape){
+                  return '<div style=\"display:flex;align-items:center\">' +
+                         '<img src=\"' + item.img + '\" height=\"30\" style=\"margin-right:6px\"' +
+                         ' onerror=\"this.onerror=null;this.src=\\'/www/noimage.png\\';\">' +
+                         '<div><b>' + escape(item.label) +
+                         '</b> – <i>' + escape(item.sci) + '</i></div></div>';
+                }
+              }")
+            )
+          ),
+          pickerInput('gbif_months', 'Months',
+                      choices = month.name, multiple = TRUE,
+                      selected = c('March', 'April')),
+          numericInput('gbif_limit', 'Max records', 500, min = 10, step = 10),
+          actionButton('gbif_go', 'Search GBIF', class = 'btn-primary')
+        ),
+        mainPanel(
+          leafletOutput('gbif_map', height = 600),
+          verbatimTextOutput('gbif_msg')
+        )
+      )
+    )
+  )
+)
+
+
+# ── 6 • server logic ───────────────────────────────────────────────────────
+server <- function(input, output, session) {
+
+  ## 6a • Community-spots map logic -----------------------------------------
+  output$map <- renderLeaflet({
+    leaflet() %>% addProviderTiles('CartoDB.Positron') %>%
+      setView(lng = 4.9041, lat = 52.3676, zoom = 12)
+  })
+
+  observe({
+    df <- spots_rv() %>% filter(month %in% input$filter_months)
+    leafletProxy('map') %>% clearMarkers()
+    if (!nrow(df)) return(NULL)
+
+    leafletProxy('map') %>%
+      addCircleMarkers(
+        data = df, lng = ~lon, lat = ~lat,
+        popup = ~{
+          idx <- match(plant, plants_df$label)
+
+          paste0(
+            '<b>', htmlEscape(plant), '</b><br>',
+            '<i>', month, '</i>',
+            ifelse(nchar(notes),
+                   paste0('<br>', htmlEscape(notes)),
+                   ''),
+
+            '<br><br><strong>Standard image</strong><br>',
+            '<img src=\"', plants_df$img[idx],
+            '\" width=\"140\" style=\"margin:4px 0\" ',
+            'onerror=\"this.onerror=null;this.src=\'/www/noimage.png\';\">',
+
+            '<br><strong>Description</strong><br>',
+            htmlEscape(plants_df$info[idx]), '<br>',
+
+            '<a href=\"', plants_df$infourl[idx],
+            '\" target=\"_blank\">More info</a>',
+
+            ifelse(!is.na(photo),
+                   paste0('<br><br><strong>Your photo</strong><br>',
+                          '<img src=\"', photo, '\" width=\"140\">'),
+                   '')
+          )
+        }
+      )
+  })
+
+  observeEvent(input$add, {
+    req(input$plant_pick, input$month_new, input$map_center)
+
+    photo_path <- NA_character_
+    if (!is.null(input$photo)) {
+      dir.create(file.path(www_path, "photos"), showWarnings = FALSE)
+      dest <- file.path(www_path, "photos", input$photo$name)
+      file.copy(input$photo$datapath, dest, overwrite = TRUE)
+      photo_path <- file.path("/www/photos", input$photo$name)
+    }
+
+    new_row <- tibble(
+      plant = input$plant_pick,
+      lat   = input$map_center$lat,
+      lon   = input$map_center$lng,
+      month = input$month_new,
+      notes = input$notes,
+      photo = photo_path
+    )
+    save_spots(bind_rows(spots_rv(), new_row))
+    showNotification("Spot added!")
+  })
+
+  ## 6b • GBIF lookup logic (restored) --------------------------------------
+  output$gbif_map <- renderLeaflet({
+    leaflet() %>% addProviderTiles('CartoDB.Positron') %>%
+      setView(lng = 4.9041, lat = 52.3676, zoom = 6)
+  })
+
+  observeEvent(input$gbif_go, {
+    req(input$gbif_species, input$gbif_months)
+
+    df <- get_gbif_occurrences_by_month(
+      scientific_name = input$gbif_species,
+      months          = input$gbif_months,
+      limit           = input$gbif_limit
+    )
+
+    if (nrow(df) == 0) {
+      output$gbif_msg <- renderText('No records found.')
+      leafletProxy('gbif_map') %>% clearMarkers()
+    } else {
+      output$gbif_msg <- renderText(paste(nrow(df), 'records displayed.'))
+      leafletProxy('gbif_map', data = df) %>%
+        clearMarkers() %>%
+        addCircleMarkers(~decimalLongitude, ~decimalLatitude,
+                         popup = ~scientificName)
+    }
+  })
+
+  ## 6c • misc --------------------------------------------------------------
+  session$onFlushed(function() session$sendCustomMessage('getCentre', 'now'))
+}
+
+# ── 7 • launch ─────────────────────────────────────────────────────────────
+shinyApp(ui, server)
+

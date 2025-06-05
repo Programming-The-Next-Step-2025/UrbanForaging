@@ -1,17 +1,26 @@
 Package: urbanforaging
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Urban Foraging Tools for Mapping and Exploring Wild Edible Plants
 Version: 0.1.0
-Authors@R: c(
-    person(
-      "Jane", "Doe",
-      email = "jane@example.com",
-      role = c("aut", "cre")
-    )
-  )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Authors@R: 
+    person("Berkan", "Akin", email = "berkan.akin@student.uva.nl", role = c("aut", "cre"))
+Description: Tools for adding and visualizing urban foraging locations. 
+    Includes functions to add new plant entries, retrieve GBIF data, and filter by month.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
+Imports:
+    dplyr,
+    rgbif,
+    leaflet,
+    shiny,
+    shinyWidgets,
+    readr,
+    purrr,
+    rprojroot,
+    htmltools
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

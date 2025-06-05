@@ -1,50 +1,39 @@
 # Urban Foraging Map  
-*A Shiny App for Exploring Seasonal Wild Foods in Amsterdam*
+*A Shiny App for Exploring Seasonal Wild Plants in Amsterdam*
 
-## Overview
+## Purpose & Features
 
-**Urban Foraging Map** is a web-based interactive tool built with **R** and **Shiny** 
-that helps users explore and share locations of **seasonal wild edible plants** in **Amsterdam**. 
-It focuses on accessible foraging opportunities in urban parks and green spaces 
-— starting with plants like **wild garlic** and **elderberries**.
+**Urban Foraging Map** is a Shiny web app built in R that lets users explore and contribute to a growing map of seasonal edible plants found in Amsterdam.  
+It combines community-submitted foraging locations, live biodiversity data from **GBIF**, and a browsable reference catalogue of wild edible plants.
 
-The app allows users to both **view existing foraging locations** and **add their own**, 
-optionally uploading photos and notes about what they found.
+### Main features:
+- 📍 **Community map** – Add, browse, and filter foraging spots with optional notes and photos  
+- 🌿 **GBIF lookup** – Search and plot scientific observations of plants by month  
+- 📖 **Plant catalogue** – Scrollable reference of all included plants, with info and images  
 
-## Ideas for Features
+## Installation
 
-- **Interactive map** of known foraging locations using Leaflet  
-- **Seasonal filter** (Spring, Summer, Autumn) to show what's in season  
-- **User-submitted locations**, including plant name, season, optional notes, and **photo upload**  
-- **Information panel** showing plant tips, ethical guidelines, and identification help
-
-## Technologies Used
-
-- **R** (main language)
-- **Shiny** (for UI and server logic)
-- **Leaflet** (interactive maps)
-- **dplyr**, **readr**, **shinyWidgets** (data handling and UI elements)
-- **fileInput** (to allow optional image uploads)
-
-## Data
-
-The app uses two data sources:
-1. **Manually collected locations** from community forums, foraging blogs, and field research
-2. **User-submitted entries** through the app interface
-
-Each foraging spot includes:
-- Plant name  
-- Coordinates (latitude/longitude)  
-- Season of harvest (e.g., Spring)  
-- Optional: notes about the plant or site  
-- Optional: photo uploaded by the user
-
-Data is stored locally in memory or a CSV file depending on deployment settings.
+```r
+remotes::install_github("Programming-The-Next-Step-2025/UrbanForaging")
+```
 
 ## How to Run
 
-1. Install R and RStudio (if not already installed)
-2. Install required packages:
-
 ```r
-install.packages(c("shiny", "leaflet", "dplyr", "readr", "shinyWidgets"))
+urbanforaging::run_uf_app()
+```
+
+## R Packages Used
+
+- **shiny** – UI and server framework  
+- **leaflet** – Interactive map rendering  
+- **dplyr**, **readr**, **purrr** – Data processing  
+- **shinyWidgets**, **htmltools** – Enhanced UI components  
+- **fileInput** – File upload handling for user-submitted images  
+
+## Data Sources
+
+- 🌐 [Wikipedia](https://www.wikipedia.org/) – plant descriptions  
+- 🖼️ [Wikimedia](https://commons.wikimedia.org/) – plant images  
+- 🌱 [GBIF](https://www.gbif.org/) – real-time species observations  
+- 📊 [Kaggle: Edible Wild Plants Dataset](https://www.kaggle.com/datasets/gverzea/edible-wild-plants)
